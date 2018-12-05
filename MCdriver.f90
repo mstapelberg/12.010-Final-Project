@@ -1,21 +1,26 @@
-program serialmainMC
+module MCdriver
     implicit none
     real, parameter :: PI = 3.1415926535
+contains
+subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta, r, x, y, z, neutron_abs, neutron_alpha,&
+    neutron_esc_energy, neutron_scat)
+    real, external :: sigma_t, sigma_gamma, sigma_naplha, sigma_s
     integer :: i, j !looping variables
-    integer(kind = 4), parameter :: maxneutrons = 10, maxinteractions = 10, atomic_number = 58 
+    integer(kind = 4), intent(in) :: maxneutrons, maxinteractions, atomic_number 
     !We are assuming that we are only dealing with Nickel 58
-    real(kind = 4) :: radius, a, alpha 
+    real(kind = 4), intent(in) :: radius, a 
+    real(kind = 4) :: alpha 
 !   real(kind = 4) :: E Energy Value for each particle
-    real(kind = 4), dimension(maxneutrons, maxinteractions) :: neutron_abs, neutron_alpha, neutron_esc_energy
+    real(kind = 4), dimension(maxneutrons, maxinteractions), intent(out) :: neutron_abs, neutron_alpha, neutron_esc_energy, x, y, z
     !The above arrays are empty, and then given a value of one (for neutron_abs and neutron_alpha) to 
     !denote at which interaction the neutron was absorbed or released an alpha, this will then 
     !let me find the corresponding x, y, z value 
-    integer,dimension(maxneutrons) :: neutron_scat
+    integer,dimension(maxneutrons), intent(out) :: neutron_scat
     real(kind = 4) :: interaction 
     integer :: n, m, seed = 1
     real(kind = 4), dimension(maxneutrons, maxinteractions) :: r, theta, phi, energy
     logical :: baby, life !used to see if the neutron is first born or not, or if the neutron is alive 
-        a = 1.1 !1.1meters
+        !a = 1.1 !1.1meters
         alpha = ((atomic_number - 1.)/(atomic_number + 1.))**2.
         do i = 1, maxneutrons 
         !Initialize the Arrays
@@ -69,21 +74,26 @@ program serialmainMC
                 end if 
             end do
         end do
-        
+        do n = 1, maxneutrons
+            do m = 1, maxinteractions
+                x(n,m) = r(n,m)*sin(theta(n,m))*cos(phi(n,m)) 
+                y(n,m) = r(n,m)*sin(theta(n,m))*sin(phi(n,m))
+                z(n,m) = r(n,m)*cos(theta(n,m))
+            end do
+        end do
         !print out arrays for debugging 
-write(*,90) (n, n=1,maxneutrons)
-90 format(' N', 10(1x, I2.2,' '))
-do m = 1, maxinteractions
-    write(*,100) m, (phi(n,m), n = 1, maxneutrons)
-    100 format(I4, 20(1x, F20.15))
-end do
-
+!write(*,90) (n, n=1,maxneutrons)
+!90 format(' N', 10(1x, I2.2,' '))
+!do m = 1, maxinteractions
+!    write(*,100) m, (phi(n,m), n = 1, maxneutrons)
+!    100 format(I4, 20(1x, F20.15))
+!end do
+end subroutine MC
 !Here we convert the finished r, theta, phi arrays into x, y, z
 !Will be implemented soon
 
 !END OF MAIN PROGRAM
 !**************************************************************************************************************
-contains 
 !THE FOLLOWING SUBROUTINES HAVE AN ISSUE, I CANNOT LOAD THE CSV FILES WITH THEIR ENERGY DEPENDENT CROSS SECTIONS
 !MY PLAN IS TO LOAD IN THE CROSS SECTIONS, AND THEN HAVE THE INPUT BE THE ENERGY VALUE OF THE NEUTRON
 !THE NEEDED SUBROUTINE WILL THEN SUBTRACT THE INPUT ENERGY FROM THE ABSOLUTE VALUE OF EACH ELEMENT 
@@ -158,4 +168,4 @@ contains
                 sigma_nalpha = 1
             end if
         end function sigma_nalpha
-end program serialmainMC
+end module MCdriver
