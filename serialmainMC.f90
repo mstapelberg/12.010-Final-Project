@@ -1,16 +1,22 @@
-program ftest
+program serialmainMC
     implicit none
-    real, parameter :: PI = 3.14159
+    real, parameter :: PI = 3.1415926535
+    integer :: i, j !looping variables
     integer(kind = 4), parameter :: maxneutrons = 10, maxinteractions = 10, atomic_number = 58 
     !We are assuming that we are only dealing with Nickel 58
     real(kind = 4) :: radius, a, alpha 
 !   real(kind = 4) :: E Energy Value for each particle
     real(kind = 4), dimension(maxneutrons, maxinteractions) :: neutron_abs, neutron_alpha, neutron_esc_energy
+    !The above arrays are empty, and then given a value of one (for neutron_abs and neutron_alpha) to 
+    !denote at which interaction the neutron was absorbed or released an alpha, this will then 
+    !let me find the corresponding x, y, z value 
     integer,dimension(maxneutrons) :: neutron_scat
+    real(kind = 4) :: interaction 
+    integer :: n, m, seed = 1
     real(kind = 4), dimension(maxneutrons, maxinteractions) :: r, theta, phi, energy
-    logical :: baby !used to see if the neutron is first born or not 
+    logical :: baby, life !used to see if the neutron is first born or not, or if the neutron is alive 
         a = 1.1 !1.1meters
-        alpha = ((atomic_number - 1)/(atomic_number + 1 ))**2
+        alpha = ((atomic_number - 1.)/(atomic_number + 1.))**2.
         do i = 1, maxneutrons 
         !Initialize the Arrays
             baby = .True.
@@ -18,8 +24,8 @@ program ftest
             theta(i,1) = 0
             phi(i,1) = 0
             energy(i,1) = 14E6
-            do while((Life = .TRUE.) .AND. (j .LE. maxinteractions))
-                if ( (radius .LT. a) .AND. (baby = .TRUE.)) then 
+            do while((Life.EQV. .TRUE.) .AND. (j .LE. maxinteractions))
+                if ( (radius .LT. a) .AND. (baby.EQV. .TRUE.)) then 
                 !When neutrons are in the vacuum
                 !Use SampleI for all of the neutrons to get
                 !their initial direction. 
@@ -38,7 +44,7 @@ program ftest
                             energy(i,j) = energy(i,j-1) - energy(i,j-1)*(1.-alpha)
                             r(i,j) = -log(rand())/sigma_t(energy(i,j))
                             theta(i,j) = 2.*PI*rand()
-                            phi(i,j) = acos(2.*PI-1.)
+                            phi(i,j) = acos(2.*rand()-1.)
                             neutron_scat(i) = neutron_scat(i) + 1. !Adds to the scatter counter for each neutron 
                             j = j+1
                         !NOW WE HAVE THE SIGMA_GAMMA    
@@ -63,93 +69,92 @@ program ftest
                 end if 
             end do
         end do
-        end program ftest
+        
+        !print out arrays for debugging 
+        do (n = 1, maxneutrons)
+            do (m = 1, maxinteractions)
+                write(*,*) energy(n,m)
+            end do
+        end do
 
+!Here we convert the finished r, theta, phi arrays into x, y, z
+!Will be implemented soon
 
+!END OF MAIN PROGRAM
+!**************************************************************************************************************
+contains 
+!THE FOLLOWING SUBROUTINES HAVE AN ISSUE, I CANNOT LOAD THE CSV FILES WITH THEIR ENERGY DEPENDENT CROSS SECTIONS
+!MY PLAN IS TO LOAD IN THE CROSS SECTIONS, AND THEN HAVE THE INPUT BE THE ENERGY VALUE OF THE NEUTRON
+!THE NEEDED SUBROUTINE WILL THEN SUBTRACT THE INPUT ENERGY FROM THE ABSOLUTE VALUE OF EACH ELEMENT 
+!IN THE FIRST COLUMN OF THE CROSS SECTION TABLES (THE ENERGY VALUES CORRESPONDING TO THE CROSS SECTIONS)
+!WHEN THE ABS(SIGMAX(1,i) - energy(i,j)) IS MINIMIZED, THE SUBROUTINE WILL OUTPUT THE CROSS SECTION THAT
+!CORRESPONDS TO THAT ENERGY LEVEL. THIS MAKES SURE THAT WE HAVE AN ENERGY DEPENDENT CROSS SECTION AFTER
+!ELASTIC SCATTERING.  \
 
-
-        contains 
             !SUBROUTINE TO OPEN THE SCATTERING CROSS SECTIONS 
-         subroutine sigma_t(E)
-            implicit none
+            !These have been changed to functions for the time being cause they only output one value, 
+            !And the name of their output is the name of the function
+         real function sigma_t(E)
             real(kind = 4), intent(in) :: E !current energy of the neutron
             integer :: i, j ,k 
-            char(125) :: filename1 = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAT.csv'
+            !char(125) :: filename1 = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAT.csv'
 
-            open(unit = 13, file = filename,status = 'old', form = 'formatted')
-
-        end subroutine sigma_t(E)
+            !open(unit = 13, file = filename,status = 'old', form = 'formatted')
+            !temp
+            if (E.EQ. 0) then 
+                sigma_t = 25
+            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+                sigma_t = 10
+            else 
+                sigma_t = 5
+            end if
+        end function sigma_t
 
             
-        subroutine sigma_gamma(E)
-            implicit none 
+        real function sigma_gamma(E)
             real(kind = 4), intent(in) :: E !Current energy of the neutron 
             integer :: i,j,k !looping variables
-            char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAGAMMA.csv'
-            open(unit = 11, file = filename, )
+            !char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAGAMMA.csv'
+            !open(unit = 11, file = filename, )
+            if (E.EQ. 0) then 
+                sigma_gamma = 10
+            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+                sigma_gamma = 3
+            else 
+                sigma_gamma = 2
+            end if
+        end function sigma_gamma
 
-        end subroutine sigma_gamma
             !SUBROUTINE TO OPEN THE SCATTERING CROSS SECTIONS 
-        subroutine sigma_s(E)
-            implicit none 
+        real function sigma_s(E)
             real(kind=4), intent(in) :: E !Current energy of the neutron
             integer :: i,j,k
-            char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAS.csv'
+            !char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAS.csv'
 
-            open(unit = 10, file = filename, )
-
-        end subroutine sigma_s 
+            !open(unit = 10, file = filename, )
+            if (E.EQ. 0) then 
+                sigma_s = 10
+            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+                sigma_s = 3
+            else 
+                sigma_s = 2
+            end if
+        end function sigma_s 
 
         !SUBROUTINE TO OPEN THE NALPA CROSS SECTIONS
-        subroutine sigma_nalpha(E)
+        real function sigma_nalpha(E)
             implicit none
             real(kind = 4), intent(in) :: E!Current energy of then neutron
             integer :: i,j,k
-            char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMANALPHA.csv'
+            !char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMANALPHA.csv'
             
-            open(unit = 12, file = filename, )
-        end subroutine sigma_nalpha
-
-        
-
-            
-!**********************************************************************
-!       SUBROUTINE TO SAMPLE R, THETA, AND PHI VALUES
-        subroutine sample(neutrons, ninteractions)
-            implicit none
-            intent(in) :: neutrons, ninteractions
-            !This should be a subroutine 
-            integer :: i,j,k !looping varibles
-            real,dimension(neutrons) :: phi, theta, r !sample arrays
-            integer :: maxinteractions, maxneutrons
-            integer, parameter :: seed = 1
-            real :: sigma_t = 4
-            
-            !maxneutrons = 10
-            !maxinteractions = 10
-
-            do i = 1,neutrons
-                do  j = 1, ninteractions
-                    theta(j) = 2*PI*rand()
-                    phi(j) =  acos(2*rand()-1)
-                    r(j) = -log(rand())/sigma_t
-                    !write(*,*) i, theta(j)
-                end do 
-            end do 
-                
-        end subroutine sample
-!********************************************************************
-!       SUBROUTINE THAT SAMPLES INITIAL THETA, AND PHI VALUES
-        subroutine sample_i(neutrons)
-            implicit none
-            intent(in) :: neutrons
-            integer :: i, j, k !looping variables
-            real, dimension(neutrons) :: phi, theta
-            integer, parameter :: seed = 1
-
-
-
-        subroutine scatter(energy, )
-        
-        end subroutine scatter
-        end program ftest
+            !open(unit = 12, file = filename, )
+            if (E.EQ. 0) then 
+                sigma_nalpha = 5
+            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+                sigma_nalpha = 2
+            else 
+                sigma_nalpha = 1
+            end if
+        end function sigma_nalpha
+end program serialmainMC
