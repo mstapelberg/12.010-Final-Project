@@ -2,14 +2,15 @@ module MCdriver
     implicit none
     real, parameter :: PI = 3.1415926535
 contains
-subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta, r, x, y, z, neutron_abs, neutron_alpha,&
+subroutine MC(maxneutrons, maxinteractions, atomic_number, a, phi, theta, r, x, y, z, neutron_abs, neutron_alpha,&
     neutron_esc_energy, neutron_scat)
     real, external :: sigma_t, sigma_gamma, sigma_naplha, sigma_s
     integer :: i, j !looping variables
     integer(kind = 4), intent(in) :: maxneutrons, maxinteractions, atomic_number 
     !We are assuming that we are only dealing with Nickel 58
-    real(kind = 4), intent(in) :: radius, a 
-    real(kind = 4) :: alpha 
+    real(kind = 4), intent(in) :: a 
+    real(kind = 4) :: alpha
+    real(kind = 4), dimension(maxneutrons) :: radius !use this to check the position of the neutron
 !   real(kind = 4) :: E Energy Value for each particle
     real(kind = 4), dimension(maxneutrons, maxinteractions), intent(out) :: neutron_abs, neutron_alpha, neutron_esc_energy, x, y, z
     !The above arrays are empty, and then given a value of one (for neutron_abs and neutron_alpha) to 
@@ -29,16 +30,19 @@ subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta
             theta(i,1) = 0
             phi(i,1) = 0
             energy(i,1) = 14E6
+            radius(i) = 0 
             do while((Life.EQV. .TRUE.) .AND. (j .LE. maxinteractions))
-                if ( (radius .LT. a) .AND. (baby.EQV. .TRUE.)) then 
+                if ( (radius(i) .LT. a) .AND. (baby.EQV. .TRUE.)) then 
                 !When neutrons are in the vacuum
                 !Use SampleI for all of the neutrons to get
                 !their initial direction. 
                     r(i,2) = 1.1
+                    radius(2) = 1.1
                     theta(i,2) = 2.*PI*rand(seed)
                     phi(i,2) = acos(2.*rand(seed) - 1.)
                     energy(i, 2) = 14E6
-                else if ((radius .GE. 1.1) .AND. (radius .LT. 1.2)) then !Distance in meters from center
+                    continue
+                else if ((radius(i) .GE. 1.1) .AND. (radius(i) .LT. 1.2)) then !Distance in meters from center
                 !For when in the Nickel. Call the Scatter, absorb,
                 !n-alpha
                     baby = .False.
@@ -51,6 +55,12 @@ subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta
                             theta(i,j) = 2.*PI*rand()
                             phi(i,j) = acos(2.*rand()-1.)
                             neutron_scat(i) = neutron_scat(i) + 1. !Adds to the scatter counter for each neutron 
+                            !This is r = sqrt(x^2 + y^2 + z^2), but I do not want to store
+                            !another set of large arrays, so I will do this calculation to 
+                            !save memory, at the cost of performance (the sqrt sucks)
+                            radius(i) = sqrt((r(i,j)*sin(theta(i,j))*cos(phi(i,j)))**2 +&
+                                (r(i,j)*sin(theta(i,j))*sin(phi(i,j)))**2 +&
+                                (r(i,j)*cos(theta(i,j)))**2)
                             j = j+1
                         !NOW WE HAVE THE SIGMA_GAMMA    
                         else if (interaction .LE. sigma_gamma(energy(i,j))/sigma_t(energy(i,j))) then 
@@ -65,7 +75,7 @@ subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta
                         end if
                     !end do 
                 !HERE THE NEUTRON HAS LEFT THE SPHERE
-                else !(r .GT. 1.2) or is outside the sphere 
+                else !(radius(i) .GT. 1.2) or is outside the sphere 
                 !Here we kill the neutron and save its value to an array     
                     neutron_esc_energy(i,j) = energy(i,j) !saves the current energy of that neutron to the neutron_esc_energy
                                                           !All other entries in that column will be NAN, which will make data
@@ -74,11 +84,16 @@ subroutine MC(maxneutrons, maxinteractions, atomic_number, radius, a, phi, theta
                 end if 
             end do
         end do
+        !Here we export the x, y, and z arrays for each neutron to plot and 
+        !conduct data analysis
+        x(1,1) = 0
+        y(1,1) = 0
+        z(1,1) = 0
         do n = 1, maxneutrons
             do m = 1, maxinteractions
-                x(n,m) = r(n,m)*sin(theta(n,m))*cos(phi(n,m)) 
-                y(n,m) = r(n,m)*sin(theta(n,m))*sin(phi(n,m))
-                z(n,m) = r(n,m)*cos(theta(n,m))
+                x(n,m) = x(n-1, m-1) + r(n,m)*sin(theta(n,m))*cos(phi(n,m)) 
+                y(n,m) = y(n-1, m-1) + r(n,m)*sin(theta(n,m))*sin(phi(n,m))
+                z(n,m) = z(n-1, m-1) + r(n,m)*cos(theta(n,m))
             end do
         end do
         !print out arrays for debugging 
