@@ -122,33 +122,38 @@ end subroutine MC
             !And the name of their output is the name of the function
          real function sigma_t(E)
             real(kind = 4), intent(in) :: E !current energy of the neutron
+            real(kind = 4), dimension(15001, 2) :: sigma_tval
             integer :: i, j ,k 
-            !char(125) :: filename1 = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAT.csv'
-
+            character (len = 250) :: filename1 = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAT.txt'
+            
+            open(12, file = filename1, status = 'old')
+            read(12,*) sigma_tval
+            return sigma_tval
             !open(unit = 13, file = filename,status = 'old', form = 'formatted')
             !temp
-            if (E.EQ. 0) then 
-                sigma_t = 25
-            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
-                sigma_t = 10
-            else 
-                sigma_t = 5
-            end if
+            !if (E.EQ. 0) then 
+            !    sigma_t = 25
+            !else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+            !    sigma_t = 10
+            !else 
+            !    sigma_t = 5
+            !end if
         end function sigma_t
 
             
         real function sigma_gamma(E)
             real(kind = 4), intent(in) :: E !Current energy of the neutron 
             integer :: i,j,k !looping variables
-            !char(125) :: filename = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAGAMMA.csv'
+            character(len = 250) :: filename2 = '/home/myless/12.010-Final-Project/12.010-Final-Project/NI58SIGMAGAMMA.txt'
             !open(unit = 11, file = filename, )
-            if (E.EQ. 0) then 
-                sigma_gamma = 10
-            else if ((E.GT.0) .AND. (E.LT.1E6)) then 
-                sigma_gamma = 3
-            else 
-                sigma_gamma = 2
-            end if
+            !if (E.EQ. 0) then 
+            !    sigma_gamma = 10
+            !else if ((E.GT.0) .AND. (E.LT.1E6)) then 
+            !    sigma_gamma = 3
+            !else 
+            !    sigma_gamma = 2
+            !end if
+            return sigma_gammaval
         end function sigma_gamma
 
             !SUBROUTINE TO OPEN THE SCATTERING CROSS SECTIONS 
