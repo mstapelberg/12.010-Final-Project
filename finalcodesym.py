@@ -28,11 +28,15 @@ import math
 #d = (-k +/- sqrt(k^2 -a*c))/a
 
 #Set user input here
+#All inputs are in meters, except for seed and bins which
+#are dimensionless
 global bins = 10
 global vacradius = 1.1
 global vesradius = 1.2
 global length = 20
 global seed = 1
+global absorb_radius = np.array(bins - 1, 2)
+global nalpha_radius = np.array(bins -1, 2)
 
 
 def geometry(bins, vacradius, vesradius, length):
@@ -44,33 +48,25 @@ def geometry(bins, vacradius, vesradius, length):
     increment = (vesradius - vacradius)/2
 
     #Defines the left and right bounds of the cylinder
-    global yboundu = length/2
-    global yboundl = -length/2
+    global ybound = length/2
+    global ybound = -length/2
 
     #this defines the boundaries for the vacuum and the shells
-    global xboundu = np.array(bins+1)
-    global xboundl = np.array(bins+1)
-    global zboundu = np.array(bins+1)
-    global zboundl = np.array(bins+1)
+    global xbound = np.array(bins+1)
+    global zbound = np.array(bins+1)
 
     #now we specifically define the conditions of the vacuum
     xboundu(0) = vacradius
-    xboundl(0) = -vacradius
     zboundu(0) = vacradius
-    zboundl(0) = -vacradius
 
     #Now it is time to generate the bounds for the shells that surround the vacuum
     #We will pass the vacradius and the x or z value for the bounds test to see where the neutron
     #is.
     for i in range(1:bins):
-        xboundu(i) = lambda x, vacradius: x >= vacradius + (i-1)*increment \
+        xbound(i) = lambda x, vacradius: x >= vacradius + (i-1)*increment \
                 and x < vacradius + i*increment
-        xboundl(i) = lambda x, vacradius: x <= -(vacradius) - (i-1)*increment \
-                and x > -(vacradius)- i * increment
-        zboundu(i) = lambda z, vacradius: z >= vacradius + (i-1)*increment \
+        zbound(i) = lambda z, vacradius: z >= vacradius + (i-1)*increment \
                 and z < vacradius + i*increment
-        zboundl(i) = lambda z, vacradius: z <= -(vacradius) - (i-1)*increment \
-                and z > -(vacradius)- i * increment
 
 def calc_theta():
     """Calculates a random theta value for interactions"""
@@ -81,7 +77,14 @@ def calc_phi():
     phi = acos(2*random.random(seed)-1)
     return phi
 def collision_distance(phi, theta, xneut, zneut, radius):
-    """calculates the distance to the next collision"""
+    """calculates the distance to the next collision, this equation
+    is from OPENMC's documentation to calculate the collision distance
+    with an infinite sphere parallel to the y axis.
+
+    xbar is difference between the x value at the boundary of the cyliner
+    and the x value of the neutron, the same logic is applied to z bar.
+
+    phi and theta values are taken from calc_phi and calc_theta"""
     xbar = lambda x: x - xneut
     zbar = lambda z: z - zneut
     a = phi**2 + theta**2
@@ -120,22 +123,32 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
 
 
 
-
+#The following functions are used to find cross sections, via binary searches to minimize
+#the overhead in these searchs O(ln(n)) compared to O(n) with a linear search
 def ni58_total(E):
     """Cross sections for all interactions that can happen in Nickel 58"""
-    x = loadtxt("NI58SIGMAT.txt", delimiter = ',')
-    indx = np.searchsorted(x(:,0), E, side = 'right')
+    x = np.loadtxt("NI58SIGMAT.txt", delimiter = ',')
+    indx = np.searchsorted(x[:,0], E, side = 'left')
     return x(indx, 1)
 
 def ni58_ngamma(E):
     """Cross sections for the (n, gamma) reactions that can occur in the vacuum vessel"""
+    x = np.loadtxt("NI58SIGMAGAMMA.txt", delimiter = ',')
+    indx = np.searchsorted(x[:,0], E, side ='left')
+    return x(indx, 1)
 
 
 def ni58_nalpha(E):
     """Cross sections for the (n, alpha) reactions that can occur in the vacuum vessel"""
-
+    x = np.loadtxt("NI58SIGMANALPHA.txt", delimiter = ',')
+    indx = np.searchsorted(x[:,0], E, side = 'left')
+    return x(indx, 1)
 
 def ni58_elas(E):
     """Cross sections for the ellastic scattering reactions that can occur in the vacuum vessel"""
+    x = np.loadtxt("NI58SIGMAS.txt", delimiter = ',')
+    indx = np.searchsorted(x[:,0], E, side = 'left')
+    return x(indx, 1)
+################################END OF CROSS SECTION FUNCTIONS####################################
 
 
