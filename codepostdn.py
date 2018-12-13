@@ -55,6 +55,7 @@ def geometry():
     global ybound = length/2
     global xbound = vesradius
     global zbound = vesradius
+    global rbound = vesradius
     #this defines the boundaries for the vacuum and the shells
 #    global xbound = np.array(bins+1)
 #    global zbound = np.array(bins+1)
@@ -82,8 +83,18 @@ def geometry():
 
     #xbound and zbound used to be returned here, is this okay to take out??
     return absorb_radius, nalpha_radius, energy_out
-
-
+def bound_checker(xneut, yneut, zneut, rneut):
+    """FUnction that determines whether or not the
+    neutron is within the bounds of the geometry"""
+    if all(
+            abs(yneut) < ybound
+            abs(xneut) < xbound
+            abs(zneut) < zbound
+            abs(rneut) < rbound
+            ):
+        return 1
+    else:
+        return 0
 
 def bin_sort(interactions, xneutron, yneutron, zneutron, energy = None):
         """This function takes the 'killed' neutron and prepares it for sorting."""
@@ -132,7 +143,8 @@ def collision_distance(phi, theta, xneut, zneut):
     c = xneut**2 + zneut**2 - vacradius**2
     d1 = (-k + sqrt(k**2 - a*c))/a
     d2 = (-k - sqrt(k**2 - a*c))/a
-    return d1, d2
+    dist_3d = d1/sin(phi)
+    return dist_3d
 
 def scatter(energy, A):
     alpha = ((A-1)/(A+1))**2
@@ -150,8 +162,9 @@ def scatter(energy, A):
         return None #test if it received a value of none
         # to decide whether or not hte neutron stays
         #HELP HERE
-    newd = collision_distancei(newphi, newtheta, newx, newz)
-    return newtheta, newphi, newr, newd, newenergy
+    else:
+        newd = collision_distancei(newphi, newtheta, newx, newz)
+        return newtheta, newphi, newr, newd, newenergy
 
 def simulator(nparticles, ninteractions, vacradius, vesradius):
     """Simulator that cranks out the Monte Carlo Code in Python"""
@@ -168,7 +181,7 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
             if interaction <= sigma_ngamma(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
                 #and then add to that bin counter
-                bin_sorter(0, )
+                bin_sorter(0,  )
                 break
             elif interaction <= sigma_nalpha(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
