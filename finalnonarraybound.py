@@ -83,6 +83,19 @@ def geometry():
     return absorb_radius, nalpha_radius, energy_out
 
 
+def bound_checker(xneut, yneut, zneut, rneut):
+    """Function that determines whether or not the neutron is
+    within the bounds of the geometry."""
+    if all(
+            abs(yneut) < ybound
+            abs(xneut) < xbound
+            abs(zneut) < zbound
+            abs(rneut) < rbound
+            ):
+        return 1
+    else:
+        return 0
+
 
 def bin_sort(interactions, xneutron, yneutron, zneutron, energy'''the energy input is optional'''):
         """This function takes the 'killed' neutron and prepares it for sorting."""
@@ -136,6 +149,11 @@ def collision_distance(phi, theta, xneut, zneut):
     return d1, d2
 
 def scatter(energy, A):
+    """This function calculates the energy lost per scatter,
+    and the new position of the neutron after scattering,
+    furthermore it checks if the neutron is still within bounds
+    and if not, will send the neutron's energy to an energy_out
+    for tallying. """
     alpha = ((A-1)/(A+1))**2
     newenergy = energy - energy*(1-alpha)*random.random(seed)
     newtheta = calc_theta()
@@ -182,6 +200,23 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
 
                 j++
                 continue
+
+
+    return nalpha_radius, absorb_radius, energy_out
+
+def plotter(nalpha_radius, absorb_radius, energy_out):
+    #import matplot lib here
+    """plot the three arrays, with the first column
+    as the x values, and the second column as the
+    tallies per bin. These are histograms"""
+
+
+
+
+
+
+
+    return 0
 
 
 #The following functions are used to find cross sections, via binary searches to minimize
