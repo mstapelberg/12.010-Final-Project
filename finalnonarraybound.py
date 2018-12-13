@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import random
 
 
 #This is a Monte Carlo Simulator for Fusion Reactor
@@ -41,33 +42,34 @@ nalpha_radius = np.ndarray(bins, 2, dtype = float)
 energy_out = np.ndarray(bins, 2, dtype = float)
 
 
-def geometry(bins, vacradius, vesradius, length):
+def geometry():
     #bins is the number of shells for tallies
     #vacradius is the radius of the vacuum
     #vesradius is the radius of the vacuum vessel
     #length is the length of the cylinder long the y-axis
 
-    increment = (vesradius - vacradius)/2
+    increment = (vesradius - vacradius)/bins
 
     #Defines the left and right bounds of the cylinder
     global ybound = length/2
-
+    global xbound = vesradius
+    global zbound = vesradius
     #this defines the boundaries for the vacuum and the shells
-    global xbound = np.array(bins+1)
-    global zbound = np.array(bins+1)
+#    global xbound = np.array(bins+1)
+#    global zbound = np.array(bins+1)
 
     #now we specifically define the conditions of the vacuum
-    xbound(0) = vacradius
-    zbound(0) = vacradius
+#    xbound(0) = vacradius
+#    zbound(0) = vacradius
 
     #Now it is time to generate the bounds for the shells that surround the vacuum
     #We will pass the vacradius and the x or z value for the bounds test to see where the neutron
     #is.
-    for i in range(1:bins):
-        xbound(i) = lambda x, vacradius: x >= vacradius + (i-1)*increment \
-                and x < vacradius + i*increment
-        zbound(i) = lambda z, vacradius: z >= vacradius + (i-1)*increment \
-                and z < vacradius + i*increment
+#    for i in range(1:bins):
+#        xbound(i) = lambda x, vacradius: x >= vacradius + (i-1)*increment \
+#                and x < vacradius + i*increment
+#        zbound(i) = lambda z, vacradius: z >= vacradius + (i-1)*increment \
+#                and z < vacradius + i*increment
 
 #This fills in the values of the nalpha and absorb radius bins
     for i in range(bins):
@@ -77,16 +79,22 @@ def geometry(bins, vacradius, vesradius, length):
     for i in range(bins):
         energy_out[i,0] = energy/bins*i
 
-    return xbound, zbound, absorb_radius, nalpha_radius, energy_out
+    #xbound and zbound used to be returned here, is this okay to take out??
+    return absorb_radius, nalpha_radius, energy_out
 
 
 
-def bin_sort(interactions, xneutron, yneutron, zneutron):
+def bin_sort(interactions, xneutron, yneutron, zneutron, energy'''the energy input is optional'''):
         """This function takes the 'killed' neutron and prepares it for sorting."""
         #    global bins = 10
         #    global absorb_radius = np.array(bins -1, 2)
         #    global nalpha_radius = np.array(bins -1, 2)
-
+        if interactions == 2:
+            #we do not calculate the radius here because we only need energy
+            indx = np.searchsorted(energy_out[:,0], radius, 'left')
+            energy_out[indx,1] = energy_out[indx, 1] + 1
+            return energy_out
+        else:
             radius = sqrt(xneutron**2 + yneutron**2 + zneutron**2)
             print(radius)
             if interactions == 0:
@@ -99,10 +107,7 @@ def bin_sort(interactions, xneutron, yneutron, zneutron):
                 indx = np.searchsorted(nalpha_radius[:,0], radius, 'left')
                 nalpha_radius[indx,1] = nalpha_radius[indx, 1] + 1
                 return nalpha_radius
-            else:
-                indx = np.searchsorted(energy_out[:,0], radius, 'left')
-                energy_out[indx,1] = energy_out[indx, 1] + 1
-                return energy_out
+
 
 def  calc_theta(seed):
     """Calculates a random theta value for interactions"""
@@ -130,6 +135,23 @@ def collision_distance(phi, theta, xneut, zneut):
     d2 = (-k - sqrt(k**2 - a*c))/a
     return d1, d2
 
+def scatter(energy, A):
+    alpha = ((A-1)/(A+1))**2
+    newenergy = energy - energy*(1-alpha)*random.random(seed)
+    newtheta = calc_theta()
+    newphi = calc_phi()
+    newr = -np.log(random.random(seed))/ni58_total(energy)
+    x = newr * sin(newphi)*cos(newtheta)
+    y = newr * sin(newphi)*sin(newtheta)
+    z = newr * cos(newtheta)
+    bound_checker(x, y, z, newr)
+    if bound_checker == 0
+    #this means out of bounds, send energy value, and return 0
+        bin_sort(2, x, y, z, newenergy)
+        #HELP HERE
+        newd = collision_distancei(newphi, newtheta, newx, newz)
+        return newtheta, newphi, newr, newd, newenergy
+
 def simulator(nparticles, ninteractions, vacradius, vesradius):
     """Simulator that cranks out the Monte Carlo Code in Python"""
     for i in range(nparticles):
@@ -149,11 +171,15 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
             elif interaction <= sigma_nalpha(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
                 #and then add to that bin counter
+                bin_sorter(1, )
                 break
             elif interaction <= sigma_elas(energy)/sigma_t(energy):
                 #Here we call the scatter function to calculate
+                scatter(energy, 58) #future implementations will have more elements
+                #for now we have nickel 58
                 #the new scatter angle and the distance to the
                 #next collision
+
                 j++
                 continue
 
