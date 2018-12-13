@@ -30,13 +30,13 @@ import math
 #Set user input here
 #All inputs are in meters, except for seed and bins which
 #are dimensionless
-global bins = 10
-global vacradius = 1.1
-global vesradius = 1.2
-global length = 20
-global seed = 1
-global absorb_radius = np.array(bins - 1, 2)
-global nalpha_radius = np.array(bins -1, 2)
+bins = 10
+vacradius = 1.1
+vesradius = 1.2
+length = 20
+seed = 1
+absorb_radius = np.ndarray(bins, 2, dtype = float)
+nalpha_radius = np.ndarray(bins, 2, dtype = float)
 
 
 def geometry(bins, vacradius, vesradius, length):
@@ -56,8 +56,8 @@ def geometry(bins, vacradius, vesradius, length):
     global zbound = np.array(bins+1)
 
     #now we specifically define the conditions of the vacuum
-    xboundu(0) = vacradius
-    zboundu(0) = vacradius
+    xbound(0) = vacradius
+    zbound(0) = vacradius
 
     #Now it is time to generate the bounds for the shells that surround the vacuum
     #We will pass the vacradius and the x or z value for the bounds test to see where the neutron
@@ -68,11 +68,40 @@ def geometry(bins, vacradius, vesradius, length):
         zbound(i) = lambda z, vacradius: z >= vacradius + (i-1)*increment \
                 and z < vacradius + i*increment
 
-def calc_theta():
+#This fills in the values of the nalpha and absorb radius bins
+    for i in range(bins):
+        absorb_radius[i,0] = vacradius + (i+1)*increment
+    for i in range(bins):
+        nalpha_radius[i,0] = vacradius + (i+1)*increment
+
+    return xbound, zbound, absorb_radius, nalpha_radius
+
+
+
+def bin_sort(interactions, xneutron, yneutron, zneutron):
+        """This function takes the 'killed' neutron and prepares it for sorting."""
+        #    global bins = 10
+        #    global absorb_radius = np.array(bins -1, 2)
+        #    global nalpha_radius = np.array(bins -1, 2)
+
+            radius = sqrt(xneutron**2 + yneutron**2 + zneutron**2)
+            print(radius)
+            if interactions == 0:
+                    #THIS PART BELOW IS THROWING ERROR, fixed making radius within bounds
+                    #of the problem
+                indx = np.searchsorted(absorb_radius[:,0], radius, 'left')
+                absorb_radius[indx, 1] = absorb_radius[indx, 1] + 1
+                return absorb_radius
+            else:
+                indx = np.searchsorted(nalpha_radius[:,0], radius, 'left')
+                nalpha_radius[indx,1] = nalpha_radius[indx, 1] + 1
+                return nalpha_radius
+
+def  calc_theta(seed):
     """Calculates a random theta value for interactions"""
     theta = 2*np.pi*random.random(seed)
     return theta
-def calc_phi():
+def calc_phi(seed):
     """calculates a random phi value for interactions"""
     phi = acos(2*random.random(seed)-1)
     return phi
@@ -97,16 +126,18 @@ def collision_distance(phi, theta, xneut, zneut, radius):
 def simulator(nparticles, ninteractions, vacradius, vesradius):
     """Simulator that cranks out the Monte Carlo Code in Python"""
     for i in range(nparticles):
-        neutron = neutron_func(i)
+        #neutron = neutron_func(i)
         energy = 14E6
         phi = calc_phi()
         theta = calc_theta()
         d = collision_distance(phi, theta, xneut, zneut)
+        j = 0
         while (j <= ninteractions and neutron_alive = 1)
             interaction = random.random()
             if interaction <= sigma_ngamma(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
                 #and then add to that bin counter
+                bin_sorter(0, )
                 break
             elif interaction <= sigma_nalpha(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
@@ -118,9 +149,6 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
                 #next collision
                 j++
                 continue
-
-
-
 
 
 #The following functions are used to find cross sections, via binary searches to minimize
