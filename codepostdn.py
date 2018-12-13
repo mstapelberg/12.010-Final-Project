@@ -84,19 +84,6 @@ def geometry():
     return absorb_radius, nalpha_radius, energy_out
 
 
-def bound_checker(xneut, yneut, zneut, rneut):
-    """Function that determines whether or not the neutron is
-    within the bounds of the geometry."""
-    if all(
-            abs(yneut) < ybound
-            abs(xneut) < xbound
-            abs(zneut) < zbound
-            abs(rneut) < rbound
-            ):
-        return 1
-    else:
-        return 0
-
 
 def bin_sort(interactions, xneutron, yneutron, zneutron, energy = None):
         """This function takes the 'killed' neutron and prepares it for sorting."""
@@ -148,11 +135,6 @@ def collision_distance(phi, theta, xneut, zneut):
     return d1, d2
 
 def scatter(energy, A):
-    """This function calculates the energy lost per scatter,
-    and the new position of the neutron after scattering,
-    furthermore it checks if the neutron is still within bounds
-    and if not, will send the neutron's energy to an energy_out
-    for tallying. """
     alpha = ((A-1)/(A+1))**2
     newenergy = energy - energy*(1-alpha)*random.random(seed)
     newtheta = calc_theta()
@@ -165,9 +147,11 @@ def scatter(energy, A):
     if bound_checker == 0
     #this means out of bounds, send energy value, and return 0
         bin_sort(2, x, y, z, newenergy)
+        return None #test if it received a value of none
+        # to decide whether or not hte neutron stays
         #HELP HERE
-        newd = collision_distancei(newphi, newtheta, newx, newz)
-        return newtheta, newphi, newr, newd, newenergy
+    newd = collision_distancei(newphi, newtheta, newx, newz)
+    return newtheta, newphi, newr, newd, newenergy
 
 def simulator(nparticles, ninteractions, vacradius, vesradius):
     """Simulator that cranks out the Monte Carlo Code in Python"""
@@ -178,7 +162,8 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
         theta = calc_theta()
         d = collision_distance(phi, theta, xneut, zneut)
         j = 0
-        while (j <= ninteractions and neutron_alive = 1)
+        while (j <= ninteractions and neutron_alive = 1):
+        #Put the new r, theta, phi values from scatter if it succeeds here.
             interaction = random.random()
             if interaction <= sigma_ngamma(energy)/sigma_t(energy):
                 #here we should check which bin the neutron is in
@@ -192,30 +177,19 @@ def simulator(nparticles, ninteractions, vacradius, vesradius):
                 break
             elif interaction <= sigma_elas(energy)/sigma_t(energy):
                 #Here we call the scatter function to calculate
-                scatter(energy, 58) #future implementations will have more elements
+                #scatter(energy, 58) #future implementations will have more elements
+                scatter_output = scatter(energy,58)
                 #for now we have nickel 58
                 #the new scatter angle and the distance to the
                 #next collision
 
-                j++
+                j+= 1
                 continue
 
-
-    return nalpha_radius, absorb_radius, energy_out
-
 def plotter(nalpha_radius, absorb_radius, energy_out):
-    #import matplot lib here
-    """plot the three arrays, with the first column
-    as the x values, and the second column as the
-    tallies per bin. These are histograms"""
-
-
-
-
-
-
-
-    return 0
+    #import matplotlib here
+    """Plot the three arrays, with the fist column as the x values,
+    and the second column as the tallies per bin. These are histograms"""
 
 
 #The following functions are used to find cross sections, via binary searches to minimize
