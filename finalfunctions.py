@@ -40,6 +40,10 @@ import cProfile, pstats, io
 #length = 20
 #energy = 14E6
 random.seed(10)
+ni58total  = np.loadtxt("NI58SIGMAT.txt", delimiter = ',')
+ni58ngamma = np.loadtxt("NI58SIGMAGAMMA.txt", delimiter = ',')
+ni58nalpha = np.loadtxt("NI58SIGMANALPHA.txt", delimiter = ',')
+ni58elas = np.loadtxt("NI58SIGMAS.txt", delimiter = ',')
 
 def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
@@ -266,28 +270,24 @@ def simulator(nparticles, ninteractions, bins, vacradius, vesradius,length, ener
 #the overhead in these searchs O(ln(n)) compared to O(n) with a linear search
 def ni58_total(E):
     """Cross sections for all interactions that can happen in Nickel 58"""
-    x = np.loadtxt("NI58SIGMAT.txt", delimiter = ',')
-    indx = np.searchsorted(x[:,0], E, side = 'left')
-    return x[indx, 1]
+    indx = np.searchsorted(ni58total[:,0], E, side = 'left')
+    return ni58total[indx, 1]
 
 def ni58_ngamma(E):
     """Cross sections for the (n, gamma) reactions that can occur in the vacuum vessel"""
-    x = np.loadtxt("NI58SIGMAGAMMA.txt", delimiter = ',')
-    indx = np.searchsorted(x[:,0], E, side ='left')
-    return x[indx, 1]
+    indx = np.searchsorted(ni58ngamma[:,0], E, side ='left')
+    return ni58ngamma[indx, 1]
 
 
 def ni58_nalpha(E):
     """Cross sections for the (n, alpha) reactions that can occur in the vacuum vessel"""
-    x = np.loadtxt("NI58SIGMANALPHA.txt", delimiter = ',')
-    indx = np.searchsorted(x[:,0], E, side = 'left')
-    return x[indx, 1]
+    indx = np.searchsorted(ni58nalpha[:,0], E, side = 'left')
+    return ni58nalpha[indx, 1]
 
 def ni58_elas(E):
     """Cross sections for the ellastic scattering reactions that can occur in the vacuum vessel"""
-    x = np.loadtxt("NI58SIGMAS.txt", delimiter = ',')
-    indx = np.searchsorted(x[:,0], E, side = 'left')
-    return x[indx, 1]
+    indx = np.searchsorted(ni58elas[:,0], E, side = 'left')
+    return ni58elas[indx, 1]
 ################################END OF CROSS SECTION FUNCTIONS####################################
 
 
