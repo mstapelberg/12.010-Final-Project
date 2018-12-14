@@ -128,9 +128,9 @@ def bound_checker(xneut, yneut, zneut, rneut):
 def find_nearest(array, value):
     indx = np.searchsorted(array, value, side = 'left')
     if indx > 0  and (indx == len(array) or math.fabs(value - array[indx-1]) < math.fabs(value - array[indx])):
-        return array[indx-1]
+        return indx-1 #array[indx-1]
     else:
-        return array[indx]
+        return indx #array[indx]
 
 def bin_sort(interactions, xneutron, yneutron, zneutron, energy = None):
         """This function takes the 'killed' neutron and prepares it for sorting."""
@@ -139,7 +139,8 @@ def bin_sort(interactions, xneutron, yneutron, zneutron, energy = None):
         #    global nalpha_radius = np.array(bins -1, 2)
         if interactions == 2 and energy is not None:
             #we do not calculate the radius here because we only need energy
-            indx = np.searchsorted(energy_out[:,0], energy, 'left')
+            #indx = np.searchsorted(energy_out[:,0], energy, 'left')
+            indx = find_nearest(energy_out[:,0], energy)
             energy_out[indx,1] += 1
             return energy_out
         else:
@@ -148,14 +149,16 @@ def bin_sort(interactions, xneutron, yneutron, zneutron, energy = None):
             if interactions == 0:
                     #THIS PART BELOW IS THROWING ERROR, fixed making radius within bounds
                     #of the problem
-                indx = np.searchsorted(absorb_radius[:,0], radius, 'right')
-                print("\n"*4, ">>>>"*9)
-                print(absorb_radius.shape)
-                print("\n"*4)
+                #indx = np.searchsorted(absorb_radius[:,0], radius, 'right')
+                indx = find_nearest(absorb_radius[:,0], radius)
+                #print("\n"*4, ">>>>"*9)
+                #print(absorb_radius.shape)
+                #print("\n"*4)
                 absorb_radius[indx, 1] += 1
                 return absorb_radius
             elif interactions == 1:
-                indx = np.searchsorted(nalpha_radius[:,0], radius, 'right')
+                #indx = np.searchsorted(nalpha_radius[:,0], radius, 'right')
+                indx = find_nearest(nalpha_radius[:,0], radius)
                 nalpha_radius[indx,1] += 1
                 return nalpha_radius
 

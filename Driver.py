@@ -1,10 +1,23 @@
-from possiblefinal import simulator, scatter, surface_distance, bin_sort, calc_theta, calc_phi, bound_checker, geometry, ni58_total, ni58_ngamma, ni58_nalpha, ni58_elas, profile
+from actualfinal import simulator, scatter, surface_distance, bin_sort, calc_theta, calc_phi, bound_checker, geometry, ni58_total, ni58_ngamma, ni58_nalpha, ni58_elas, profile
 import cProfile, pstats, io
 import matplotlib.pyplot as plt
 
-#The inputs are, nparticles, ninteractions, bins, vacradius, vesradius, length, energy_i
-output = simulator(1000, 250, 10, 1.1, 1.2,20, 14E6)
 
+#USER INPUTS
+#The inputs are, nparticles, ninteractions, bins, vacradius, vesradius, length, energy_i
+nparticles = 1000
+ninteractions = 250
+bins = 10
+vacradius = 1.1
+vesradius = 1.2
+length = 20
+energy_i = 14E6
+
+#END OF USER INPUT
+#Runs the simulation code
+output = simulator(nparticles, ninteractions, bins, vacradius, vesradius, length, energy_i)
+
+#These prints are for tables or numerical verification.
 print("This is the nalpha_radius for neutrons")
 nalpha = output[0]
 print(nalpha)
